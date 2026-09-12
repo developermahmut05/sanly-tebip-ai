@@ -113,7 +113,9 @@ Jogaby diňe şu formatda ber:
   "plants": ["Ösümlik ady"] 
 }
 `;
-
+app.get('/', (req, res) => {
+    res.send('Sanly Tebip API işleýär!');
+});
 app.post("/api/chat", async (req, res) => {
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "Prompt boş bolmaly däl" });
