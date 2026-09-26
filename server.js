@@ -1,12 +1,17 @@
 import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import fs from "fs";
+import path from 'path';
+import { fileURLToPath } from 'url';
+import multer from "multer";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { 
     testConnection, 
     saveNewResponse, 
     findPlantInLibrary,
     findCachedResponse,
+    pool
 } from "./db.js";
 
 const apiKey = process.env.GEMINI_API_KEY;
@@ -21,7 +26,33 @@ const PORT = process.env.PORT || 5000;
 
 app.use(express.json());
 app.use(cors({ origin: "*" }));
+app.use(express.urlencoded({ extended: true }));
 
+// ES Modules üçin doly ýoly (absolute path) kesgitleýäris
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+app.use(express.static(path.join(__dirname, 'public')));
+// 'uploads' papkasynyň barlygyny barlap, eger ýok bolsa awtomatiki döredýäris
+const uploadDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadDir)) {
+    fs.mkdirSync(uploadDir, { recursive: true });
+    console.log("📁 'uploads' papkasy awtomatiki döredildi.");
+}
+
+// Multer-i doly diskStorage bilen sazlaýarys (faýl atlary we giňeltmesi ýitmez ýaly)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, uploadDir);
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        // Öňki original adyny ýa-da .webm giňeltmesini saklap galýarys
+        const ext = path.extname(file.originalname) || '.webm';
+        cb(null, uniqueSuffix + ext);
+    }
+});
+
+const upload = multer({ storage: storage });
 const genAI = new GoogleGenerativeAI(apiKey);
 const systemInstructionTebip = `
 ### ROLE & IDENTITY
@@ -117,6 +148,12 @@ app.get('/', (req, res) => {
     res.send('Sanly Tebip API işleýär!');
 });
 app.post("/api/chat", async (req, res) => {
+    console.log("🚨 REQUEST GELDI");
+    console.log("BODY:", req.body);
+    console.log("📥 REQUEST GELDI BODY:", req.body);
+    if (!req.body) {
+        return res.status(400).json({ error: "Request body boş gelýär!" });
+    }
     const { prompt } = req.body;
     if (!prompt) return res.status(400).json({ error: "Prompt boş bolmaly däl" });
 
@@ -305,32 +342,27 @@ const chat = model.startChat({
                 
         if (plantInDb) {
             finalPrompt = `Ulanyjynyň soragy: "${prompt}".
-            
+                
             BU GÖRKEZME ÖRÄN MÖHÜM (STRICT RULES):
             1. REŽIM: ${isMedicalComplaint 
               ? "Ulanyjy saglyk şikaýatyny etdi ýa-da ösümligiň diňe peýdasyny/ulanylyşyny sorady. SYSTEM PROMPT-daky '6. AGYRY, ŞIKAÝATLAR WE ÖSÜMLIGIŇ PEÝDASY SORALANDA' şablony boýunça mähirli giriş taýýarla! 'BIOLOGIK HÄSIÝETNAMASY' we 'GEOGRAFIKI ÝAÝRAWY' bölümlerini bütinleý AÝYRYP TAŞLA! Diňe gysga peýdasyny we derman taýýarlanylyşyny çykar!" 
-              : "Ulanyjy göni ösümlik öwrenmek üçün sorady. SYSTEM PROMPT-daky '5. ENSIKLOPEDIK STANDARTLAR' boýunça ÄHLI bölümleri (Biologiýa, Geografiýa, Düzümi, Şypasy, Resepti) doly dury görnüşde ber!"}
-            
-            2. JOGAP FORMATY: Jogaby berk suratda diňe aşakda berlen SQL maglumatlaryna esaslanyp gur we System Prompt-daky berk JSON formatynda gaýtar! Özüňden başga ösümlik uýdurma!
-            
+              : "Ulanyjy göni ösümlik öwrenmek üçin sorady. SYSTEM PROMPT-daky '5. ENSIKLOPEDIK STANDARTLAR' boýunça ÄHLI bölümleri doly görnüşde ber!"}
+                
+            2. JOGAP FORMATY: Jogaby berk suratda diňe aşakda berlen 'Ensiklopedik tekst' maglumatyna esaslanyp gur we System Prompt-daky berk JSON formatynda gaýtar! Özüňden başga ösümlik uýdurma!
+                
             3. TEHNIKI SETIRLERI GAÝTALAMAK GATY BERK GADAGANDYR (CRITICAL FILTER): 
-               Aşakdaky [SQL BAZADAN GELEN CONTEXT] içinde duran 'Türkmençe ady:', 'Latynça ady:', 'Rusça ady:', 'Tom:', 'Sahypa:' diýen sözbaşylary we olaryň garşysyndaky gysga tehniki tekstleri JOGABYŇ IÇINDE ASLA ÝAZMA, KÖPELTME WE GAÝTALAMA! 
-               - Eger Režim Şikaýat/Peýda bolsa: Jogaba göni "Hormatly ulanyjy..." diýen mähirli sözlem bilen başla!
-               - Eger Režim Umumy Maglumat bolsa: Jogaba hiç hili giriş sözsüz, göni "BIOLOGIK HÄSIÝETNAMASY:" diýen sözbaşy bilen başla!
-            
+                - Aşakdaky SQL context maglumatlary diňe ösümligi tanamak we teksti ýazmak üçin ulanylmalydyr. 'Türkmençe ady:', 'Latynça ady:', 'Tom:', 'Sahypa:' ýaly sözbaşylary jogabyň içine ASLA göçürip ýazma!
+                - Eger Režim Şikaýat/Peýda bolsa: Jogaba göni "Hormatly ulanyjy..." diýen mähirli sözlem bilen başla!
+                - Eger Režim Umumy Maglumat bolsa: Jogaba hiç hili giriş sözsüz, göni "BIOLOGIK HÄSIÝETNAMASY:" diýen sözbaşy bilen başla!
+                
             4. SURAT KADASY: JSON formatynyň 'plants' sanawyna DIŇE we DIŇE şu aşakda berlen 'Türkmençe ady' bahasyny harpma-harp, üýtgetmän ýaz: ["${plantInDb.ady_tm}"]
-            
-            5. GAÝTALANMA GADAGANDYR: 'BIOLOGIK HÄSIÝETNAMASY:' diýen sözbaşydan soň ösümligiň türkmençe ýa-da latynça adyny ASLA ikilenç gaýtadan ýazma! Göni daşky gurluşyny düşündirmäge başla.
-
-            [SQL BAZADAN GELEN CONTEXT]:
-            Türkmençe ady: ${plantInDb.ady_tm}
-            Latynça ady: ${plantInDb.ady_lat}
-            Rusça ady: ${plantInDb.ady_ru || 'Maglumat ýok'}
-            Tom: ${plantInDb.tom_belgisi}
-            Sahypa: ${plantInDb.sahypa_belgisi}
-            Ensiklopedik tekst: ${plantInDb.ensiklopedik_tekst || ''}`;
-        }
-
+                
+            5. GAÝTALANMA GADAGANDYR: 'BIOLOGIK HÄSIÝETNAMASY:' diýen sözbaşydan soň ösümligiň adyny ikilenç gaýtadan ýazma, göni daşky gurluşyny düşündirmäge başla.
+    
+            [SQL BAZADAN GELEN ÖSÜMLIK MAGLUMATLARI]:
+            - Ösümligiň ady: ${plantInDb.ady_tm}
+            - Ensiklopedik mazmun we maglumatlar: ${plantInDb.ensiklopedik_tekst || 'Maglumat ýok'}`;
+            }
         let responseText = null;
         let attempts = 0;
         const maxAttempts = 2;
@@ -478,7 +510,7 @@ const chat = model.startChat({
             }
         
             let elegantComplaint = "";
-        
+    
             if (complaint) {
                 const complaintWords = complaint.split(/\s+/);
                 const formattedWords = complaintWords.map(word => {
@@ -508,7 +540,7 @@ const chat = model.startChat({
         
                 elegantComplaint = formattedWords.join(" ").trim();
         
-                // 2. KESEL GOŞULMALARYNY WE "NE/NI/GARŞY" GALYNDYLARYNY TOLY SEPRIT ETMEK
+                // Kesel goşulmalaryny we galyndylary arassalamak
                 elegantComplaint = elegantComplaint
                     .replace(/\bkesellerine\b/gi, "")
                     .replace(/\bkeselleri\b/gi, "")
@@ -521,12 +553,10 @@ const chat = model.startChat({
                     .replace(/\bne\b/gi, "")
                     .replace(/\bni\b/gi, "")
                     .replace(/gözüňiziň agyrmagy/gi, "gözleriňiziň agyrmagy")
-                    .replace(/dişüňiziň agyrmagy/gi, "dişleriňiziň agyrmagy")
+                    .replace(/dişiňiziň agyrmagy/gi, "dişleriňiziň agyrmagy")
                     .replace(/\s+/g, " ")
                     .trim();
-        
-                // Eger diňe kesel ady galan bolsa (meselem: "aiw we aids", "ýürek", "bagyr"),
-                // yzyna arassa "keseli" dakylyp jemlenýär.
+            
                 if (
                     elegantComplaint && 
                     !elegantComplaint.endsWith("keseli") && 
@@ -551,52 +581,57 @@ const chat = model.startChat({
                 .replace(/^[\s.\-,:;]+/, "")
                 .trim();
         
-            const plantNameFormatted = plantInDb.ady_tm.charAt(0).toUpperCase() + plantInDb.ady_tm.slice(1);
+            const plantNameFormatted = plantInDb && plantInDb.ady_tm 
+                ? plantInDb.ady_tm.charAt(0).toUpperCase() + plantInDb.ady_tm.slice(1) 
+                : "";
         
-            const header = 
-                `Bu ösümlik barada Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasynyň ` +
-                `${plantInDb.tom_belgisi}-nji tomunyň, ${plantInDb.sahypa_belgisi}-nji sahypasynda giňişleýin maglumat berilýär.\n\n` +
-                `Türkmençe ady: ${plantNameFormatted}\n` +
-                `Latynça ady: ${plantInDb.ady_lat}\n` +
-                `Rusça ady: ${plantInDb.ady_ru || 'Maglumat ýok'}\n\n`;
+            const header = plantInDb 
+                ? `Bu ösümlik barada Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasynyň ${plantInDb.tom_belgisi}-nji tomunyň, ${plantInDb.sahypa_belgisi}-nji sahypasynda giňişleýin maglumat berilýär.\n\n` +
+                  `Türkmençe ady: ${plantInDb.ady_tm}\n` +
+                  `Latynça ady: ${plantInDb.ady_lat}\n` +
+                  `Rusça ady: ${plantInDb.ady_ru || "Maglumat ýok"}\n\n`
+                : "";
         
             let welcomeMessage = "";
         
             if (searchMode === "benefitOnly") {
-                welcomeMessage = `Hormatly ulanyjy, Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, ` +
-                                 `${plantNameFormatted} dermanlyk ösümliginiň peýdaly taraplary barada maslahat bermek isleýärin.\n\n`;
+                welcomeMessage = `Hormatly ulanyjy, Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, ${plantNameFormatted} dermanlyk ösümliginiň peýdaly taraplary barada maslahat bermek isleýärin.\n\n`;
             } 
             else if (searchMode === "medicalComplaint") {
                 const finalComplaint = elegantComplaint || "saglyk ýagdaýyňyz";
-                welcomeMessage = `Hormatly ulanyjy, ${finalComplaint} barada eşitmek gaty gynandyryjy. ` +
-                                 `Dermanlyk ösümlikler arkaly bu ýagdaýy ýeňilleşdirmek üçin size peýdaly maslahat bermek isleýärin. ` +
-                                 `Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, ` +
-                                 `bu ýagdaýy bejermekde iň peýdaly ösümlikleriň biri ${plantNameFormatted} hasaplanýar.\n\n`;
+                welcomeMessage = `Hormatly ulanyjy, ${finalComplaint} barada eşitmek gaty gynandyryjy. Dermanlyk ösümlikler arkaly bu ýagdaýy ýeňilleşdirmek üçin size peýdaly maslahat bermek isleýärin. Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, bu ýagdaýy bejermekde iň peýdaly ösümlikleriň biri ${plantNameFormatted} hasaplanýar.\n\n`;
             } 
             else {
-                welcomeMessage = `Hormatly ulanyjy, Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, ` +
-                                 `${plantNameFormatted} dermanlyk ösümligi barada giňişleýin maglumat bermek isleýärin.\n\n`;
+                welcomeMessage = `Hormatly ulanyjy, Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasyna laýyklykda, ${plantNameFormatted} dermanlyk ösümligi barada giňişleýin maglumat bermek isleýärin.\n\n`;
             }
         
             mainText = welcomeMessage + header + mainText;
         }
+    
         const imageFile = plantInDb && plantInDb.surat_fayl ? plantInDb.surat_fayl : "default.png";
         const validPlantsList = parsedData.plants && parsedData.plants.length > 0
             ? parsedData.plants
             : (plantInDb ? [plantInDb.ady_tm] : []);
-
+    
         const finalResponse = {
             text: mainText,
             plants: validPlantsList,
-            surat_fayl: imageFile, 
+            surat_fayl: imageFile,
             source: plantInDb ? "Sanly Tebip (Ensiklopediýa)" : "Gemini AI"
         };
-
         // --- 3. BAZA ÝAZMAK WE KITAPHANANY TÄZELEMEK ---
         try {
-            // DÜZELDILDI: Indi dermanlyk we şikaýat maglumatlary hem bütinleý cache ýazylýar!
-            await saveNewResponse(trimmedPrompt, finalResponse, imageFile);
-            console.log(`✅ Söhbetdeşlik üstünlikli baza ýazyldy: ${trimmedPrompt}`);
+            const saved = await saveNewResponse(
+                trimmedPrompt,
+                finalResponse,
+                imageFile
+            );
+            
+            if (saved) {
+                console.log("✅ Jogap cache-e ýazyldy.");
+            } else {
+                console.error("❌ Jogap cache-e ýazylmady.");
+            }
 
             if (parsedData.plants && parsedData.plants.length > 0 && imageFile !== "default.png") {
                 const newPlantName = parsedData.plants[0];
@@ -629,6 +664,111 @@ const chat = model.startChat({
             surat_fayl: "default.png", 
             source: "Sanly Tebip habarnamasy"
         });
+    }
+});
+// 🎙️ Sanly Tebip - Sesli soraglary kabul ediş endpointi (/api/tebip-audio)
+app.post("/api/tebip-audio", upload.single('audio'), async (req, res) => {
+    let filePath = null;
+    try {
+        if (!req.file) {
+            return res.status(400).json({ success: false, message: "Ses faýly tapylmady!" });
+        }
+
+        console.log("🌿 Sanly Tebip - Ses faýly kabul edildi:", req.file.filename);
+        filePath = req.file.path;
+
+        console.log("🎙️ Ses faýly işlenilip başlandy...");
+
+        // 1. Faýly base64 formatyna öwürýäris
+        let base64Audio = "";
+        if (req.file.buffer) {
+            base64Audio = req.file.buffer.toString("base64");
+        } else if (filePath) {
+            const fileBuffer = fs.readFileSync(filePath);
+            base64Audio = fileBuffer.toString("base64");
+        }
+
+        if (!base64Audio) {
+            console.log("❌ Ýalňyşlyk: Ses faýlynyň maglumaty (base64) tapylmady!");
+            return res.status(400).json({ success: false, error: "Ses faýly okalyp bilmedi." });
+        }
+
+        // 2. MimeType barlagy
+        const mimeType = req.file.mimetype && req.file.mimetype !== 'application/octet-stream' 
+            ? req.file.mimetype 
+            : 'audio/webm';
+
+        console.log(`⏳ Gemini modeline ugradýar (Format: ${mimeType})...`);
+
+        const audioModel = genAI.getGenerativeModel({ 
+            model: "gemini-2.5-flash",
+            systemInstruction: systemInstructionTebip 
+        });
+
+        // 3. Gemini modeline sorag ugratmak
+        const result = await audioModel.generateContent([
+            {
+                inlineData: {
+                    data: base64Audio,
+                    mimeType: mimeType
+                }
+            },
+            { 
+                text: "Bu ses faýlyndaky soragy diňläň we Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» ensiklopediýasyna laýyklykda doly, düşnükli jogap beriň. Jogabyňyzy hökman aşakdaky JSON formatda beriň:\n{\n  \"text\": \"Siziň doly we giňişleýin jogabyňyz...\",\n  \"plants\": [\"Ösümligiň ady\"]\n}" 
+            }
+        ]);
+
+        console.log("✅ AI-den üstünlikli jogap alyndy!");
+        const rawText = result.response.text();
+        console.log("📄 Jogap (Raw):", rawText);
+        function parseTebipResponse(text) {
+            if (!text) return { text: "Maglumat tapylmady.", plants: [] };
+            
+            try {
+                let cleaned = text.trim();
+                
+                // Markdown bloklaryny aýyrýarys
+                const jsonMatch = cleaned.match(/```(?:json)?\s*([\s\S]*?)\s*```/);
+                if (jsonMatch && jsonMatch[1]) {
+                    cleaned = jsonMatch[1].trim();
+                }
+
+                // AI text içindäki rugsat berilmedik control character-leri arassalaýarys
+                cleaned = cleaned.replace(/[\u0000-\u001F]+/g, " ");
+
+                const parsed = JSON.parse(cleaned);
+                return {
+                    text: parsed.text || text,
+                    plants: parsed.plants || []
+                };
+            } catch (e) {
+                console.error("⚠️ JSON parse säwligi, Asyl tekst ulanylýar:", e.message);
+                
+                // Eger JSON parse edilip bilmedik ýagdaýynda hem text bilen plants-i regex arkaly tapmaga synanyşýarys
+                return { 
+                    text: text.replace(/```(?:json)?|```/g, "").trim(), 
+                    plants: text.toLowerCase().includes("narpyz") ? ["Narpyz"] : [] 
+                };
+            }
+        }
+
+        const parsed = parseTebipResponse(rawText);
+
+        return res.status(200).json({
+            success: true,
+            message: "Ses üstünlikli işlenildi!",
+            filename: req.file.filename,
+            response: parsed.text,
+            plants: parsed.plants
+        });
+
+    } catch (error) {
+        console.error("❌ Sanly Tebip Ses ýükleme ýa-da AI ýalňyşlygy:", error);
+        return res.status(500).json({ success: false, error: error.message });
+    } finally {
+        if (filePath && fs.existsSync(filePath)) {
+            fs.unlinkSync(filePath);
+        }
     }
 });
 // Serweri başlatmak
