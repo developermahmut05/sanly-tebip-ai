@@ -1,8 +1,8 @@
 /**
  * SANLY TEBIP AI - JavaScript Controller (ID Mismatch Fixed)
  */
-//  const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
-const BASE_URL = "http://localhost:5000";
+ const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
+// const BASE_URL = "http://localhost:5000";
 
 // --- 1. ELEMENT SEÇİCİLERİ (HTML-e laýyklandy) ---
 const startRecordBtn = document.getElementById('mic-btn'); 

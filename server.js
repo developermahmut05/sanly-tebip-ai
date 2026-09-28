@@ -771,14 +771,20 @@ app.post("/api/tebip-audio", upload.single('audio'), async (req, res) => {
         }
     }
 });
-// Serweri başlatmak
+// Serweri başlatmak (Howpsuz barlag bilen)
 async function startServer() {
     try {
-        await testConnection();
+        // 1. Bazany barlap görýäris, emma ýalňyşlyk çyksa hem serweri duruzmarys
+        const isConnected = await testConnection();
+        if (!isConnected) {
+            console.log("⚠️ MySQL bazasy ýok, emma serwer diňe Gemini API bilen işini dowam edýär.");
+        }
+
+        // 2. Bazanyň bar ýa ýokdugyna garamazdan serwer hemişe açylýar
         app.listen(PORT, () => {
-            console.log(`✅ MySQL: Baglanyşyk şowly!`);
             console.log(`🚀 Sanly Tebip http://localhost:${PORT}-da işleýär.`);
         });
+        
     } catch (err) {
         console.error("❌ Serwer açylmady:", err.message);
         process.exit(1);
