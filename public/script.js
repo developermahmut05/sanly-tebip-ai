@@ -1,8 +1,8 @@
 /**
  * SANLY TEBIP AI - JavaScript Controller (ID Mismatch Fixed)
  */
- const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
-// const BASE_URL = "http://localhost:5000";
+//  const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
+const BASE_URL = "http://localhost:5000";
 
 // --- 1. ELEMENT SEÇİCİLERİ (HTML-e laýyklandy) ---
 const startRecordBtn = document.getElementById('mic-btn'); 
@@ -359,7 +359,20 @@ if (startRecordBtn) {
         if (!isRecording) {
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-                mediaRecorder = new MediaRecorder(stream);
+                
+                // Telefonlar üçin iň amatly formaty awtomatiki saýlaýança barlag
+                let options = { mimeType: 'audio/webm' };
+                if (!MediaRecorder.isTypeSupported('audio/webm')) {
+                    if (MediaRecorder.isTypeSupported('audio/mp4')) {
+                        options = { mimeType: 'audio/mp4' }; // Android üçin has laýyk
+                    } else if (MediaRecorder.isTypeSupported('audio/ogg')) {
+                        options = { mimeType: 'audio/ogg' };
+                    } else {
+                        options = {}; // Hiç biri bolmasa deslapky görnüşi
+                    }
+                }
+
+                mediaRecorder = new MediaRecorder(stream, options);
                 audioChunks = [];
 
                 mediaRecorder.ondataavailable = (event) => {
@@ -369,7 +382,8 @@ if (startRecordBtn) {
                 };
 
                 mediaRecorder.onstop = async () => {
-                    const audioBlob = new Blob(audioChunks, { type: 'audio/webm' });
+                    // Góreç (mimeType) nähili açylan bolsaş şoňa görä Blob döretmek
+                    const audioBlob = new Blob(audioChunks, { type: options.mimeType || 'audio/webm' });
                     await sendAudioToServer(audioBlob);
                     stream.getTracks().forEach(track => track.stop());
                 };
