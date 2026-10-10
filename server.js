@@ -141,7 +141,17 @@ Jogaby diňe şu formatda ber:
 }
 `;
 app.get('/', (req, res) => {
-    res.send('Sanly Tebip API işleýär!');
+    const userAgent = req.headers['user-agent'] || '';
+    
+    // Mobil enjamlary barlamak
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(userAgent);
+
+    if (isMobile) {
+        return res.sendFile(__dirname + '/public/mobile.html');
+    }
+    
+    // Bilgisayardan girenler üçün
+    res.sendFile(__dirname + '/public/index.html');
 });
 app.post("/api/chat", async (req, res) => {
     console.log("🚨 REQUEST GELDI");
