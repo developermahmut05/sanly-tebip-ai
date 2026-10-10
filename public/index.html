@@ -8,10 +8,11 @@
     <link rel="stylesheet" href="./app.css">
     <script src="./tailwind.js"></script>
     <script>
-        // Eger mobil enjam bolsa ýa-da ekran ini kiçi bolsa mobile.html-a yönlendirýär
-        if (window.innerWidth <= 768 || /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent)) {
-            window.location.href = "mobile.html";
+        // Eger ekran inçegi mobil ölçegden kiçi bolsa we mobile sahapda däl bolsa, göni mobile.html-e geçir
+        if (window.innerWidth <= 768 && !window.location.pathname.includes('mobile.html')) {
+            window.location.href = '/mobile.html';
         }
+    </script>
     </script>
     <script>
         tailwind.config = {
