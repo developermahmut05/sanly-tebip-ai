@@ -1,8 +1,8 @@
 /**
  * SANLY TEBIP AI - JavaScript Controller (ID Mismatch Fixed)
  */
-//const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://sanly-tebip-ai-2.onrender.com";
+// const BASE_URL = "http://localhost:5000";
 
 // --- 1. ELEMENT SEÇİCİLERİ (HTML-e laýyklandy) ---
 const startRecordBtn = document.getElementById('mic-btn'); 
@@ -71,11 +71,12 @@ async function sendToAI() {
     const loading = showLoading();
 
     try {
-        const response = await fetch(`${BASE_URL}/api/chat`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ prompt })
-        });
+        // Hiç hili BASE_URL gerek däl, göni ýoluň özüni ýazyň:
+const response = await fetch('/api/chat', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ prompt })
+});
         const data = await response.json();
         
         loading.remove();
