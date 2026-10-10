@@ -1,0 +1,189 @@
+    @import url('./app.css');
+    
+    /* Esasy Font we Arka fon */
+    body { 
+        font-family: 'Plus Jakarta Sans', sans-serif; 
+        background-color: #020617; 
+        color: #f8fafc;
+    }
+
+    /* Sidebar we Glassmorphism */
+    .glass-sidebar { 
+        backdrop-filter: blur(40px); 
+        background: rgba(2, 6, 23, 0.85); 
+        border-right: 1px solid rgba(255, 255, 255, 0.05);
+    }
+
+    /* Söhbetdeşlik Elementi (Düzedildi) */
+    .history-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between; /* Elementleri iki gyra itýär */
+        padding: 0.75rem 1rem;
+        margin-bottom: 0.5rem;
+        border-radius: 1.2rem;
+        cursor: pointer;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid transparent;
+        background: rgba(255, 255, 255, 0.02);
+        position: relative;
+        overflow: hidden;
+    }
+
+    .history-item:hover {
+        background: rgba(255, 255, 255, 0.06);
+        border-color: rgba(16, 185, 129, 0.2);
+    }
+
+    /* Aktiw söhbetdeşlik yşygy */
+    .history-item.active {
+        background: linear-gradient(90deg, rgba(16, 185, 129, 0.12) 0%, rgba(16, 185, 129, 0.03) 100%);
+        border-color: rgba(16, 185, 129, 0.4);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3), 0 0 15px rgba(16, 185, 129, 0.05);
+    }
+
+    /* # Belgisi we Tekst Konteýneri */
+    .hash-icon {
+        color: rgba(16, 185, 129, 0.4);
+        font-weight: 800;
+        flex-shrink: 0; /* Gysylmagynyň öňüni alýar */
+        transition: all 0.3s ease;
+    }
+
+    .active .hash-icon {
+        color: #10b981;
+        text-shadow: 0 0 12px rgba(16, 185, 129, 0.6);
+    }
+
+    /* Pozmak Düwmesi (Düzedildi) */
+    .delete-btn {
+        opacity: 0; /* Diňe hover-da görner */
+        transform: translateX(10px);
+        transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        color: #64748b;
+        padding: 6px;
+        border-radius: 10px;
+        flex-shrink: 0; /* Suratyňdaky ýaly gysylyp aşak düşmez */
+    }
+
+    .history-item:hover .delete-btn {
+        opacity: 1;
+        transform: translateX(0);
+    }
+
+    .delete-btn:hover {
+        background: rgba(239, 68, 68, 0.15);
+        color: #ef4444;
+        transform: scale(1.1);
+    }
+
+    /* Scrollbar we Animasýonlar öňküsi ýaly galdy */
+    .custom-scroll::-webkit-scrollbar { width: 4px; }
+    .custom-scroll::-webkit-scrollbar-thumb { 
+        background: linear-gradient(to bottom, transparent, rgba(16, 185, 129, 0.4), transparent); 
+        border-radius: 20px; 
+    }
+
+    .message-appear { 
+        animation: fadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards; 
+    }
+
+    @keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(15px); filter: blur(5px); }
+        to { opacity: 1; transform: translateY(0); filter: blur(0); }
+    }
+
+    .floating-bg { animation: float 10s ease-in-out infinite; }
+    @keyframes float {
+        0%, 100% { transform: translateY(0px) scale(1.1); filter: brightness(1); }
+        50% { transform: translateY(-20px) scale(1.15); filter: brightness(1.2); }
+    }
+    .glass-card {
+        backdrop-filter: blur(15px);
+        background: rgba(16, 185, 129, 0.05); /* Inçe ýaşyl fon */
+        border: 1px solid rgba(16, 185, 129, 0.3); /* Ýaşyl çyzyk hemişe bar */
+        box-shadow: 0 0 30px rgba(16, 185, 129, 0.1); /* Hemişelik inçe yşyk */
+        border-radius: 2.5rem;
+        transition: all 0.4s ease;
+    }
+    
+    /* Baş sözüniň (Title) hemişe ýaşyl bolmagy üçin */
+    #plant-title {
+        color: #10b981; /* Emerald-500 reňki */
+        text-shadow: 0 0 15px rgba(16, 185, 129, 0.3);
+        font-weight: 900;
+    }
+    
+    /* Surat konteýneriniň içindäki inçe bezeg */
+    .image-container {
+        border-bottom: 1px solid rgba(16, 185, 129, 0.1);
+        background: rgba(2, 6, 23, 0.4);
+    }
+    @media (max-width: 767px) {
+        #sidebar.-translate-x-full {
+            transform: translateX(-100%);
+        }
+        #sidebar {
+            transition-property: width;
+            transition-duration: 300ms;
+            transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+        }
+    }
+    #sidebar div {
+        white-space: nowrap;
+    }
+    /* Arka fondaky surat üçin dury we neon stil */
+.bg-image-style {
+    filter: drop-shadow(0 0 15px rgba(16, 185, 129, 0.3)); /* Ýumşak ýaşyl ýagtylyk */
+    opacity: 0.25; /* Ikinji suratdaky ýaly dury görünmegi üçin biraz artdyrmaly */
+    transition: all 0.5s ease;
+}
+/* DIŇE AI jogabynyň içindäki section title */
+
+/* AI jogabynyň içindäki dury ýaşyl bölüm başlyklary */
+.section-title {
+    color: #00ffae;
+    font-size: 18px;
+    font-weight: 800;
+    margin-top: 1rem;
+    margin-bottom: 0.5rem;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    display: block;
+    line-height: 0.2;
+}
+
+/* Diňe DERMANYŇ TAÝÝARLANYLYŞY üçin ýörite dizaýn goldawy */
+.text-special {
+    color: #00ffae !important;
+    font-size: 19px !important;
+    font-weight: 900 !important;
+    letter-spacing: 1.5px;
+}
+
+/* Esasy ýazgy gutusy (Suratdaky dargamany bejerýän esasy ýer) */
+.typing-box {
+    animation: fadeInAnimation 0.4s ease;
+    line-height: 1.5;            /* Setirleriň özara tebigi aralygy */
+    text-align: left;            /* Düzedildi: justify ýerine left etdik, şonluk bilen setirler gyra çekilip dargamaz! */
+    white-space: normal;         /* Artykmaç boşluklary awtomatiki birleşdirer */
+    word-break: break-word;
+}
+
+/* Abzaslaryň we setirleriň tebigi durmagy üçin */
+.typing-box p {
+    margin-bottom: 0.5rem;       /* Setirleriň arasy tebigi gysga bolar */
+    display: block;
+}
+
+/* br tegi goşantça boşluk döretmez ýaly */
+.typing-box br {
+    display: block;
+    content: "";
+   
+}
+
+@keyframes fadeInAnimation {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}

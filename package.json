@@ -1,0 +1,60 @@
+{
+    "name": "sanly-tebip-ai",
+    "version": "1.0.0",
+    "description": "Sanly-Tebip atly AI",
+    "author": "Mahmut",
+    "main": "main.js",
+    "type": "commonjs",
+    "scripts": {
+        "test": "echo \"Error: no test specified\" && exit 1",
+        "dev": "nodemon server.js",
+        "start": "electron .",
+        "build": "electron-builder --win"
+    },
+    "keywords": [],
+    "license": "ISC",
+    "dependencies": {
+        "@capacitor/android": "^8.5.1",
+        "@capacitor/cli": "^8.5.1",
+        "@capacitor/core": "^8.5.1",
+        "@capacitor/ios": "^8.5.2",
+        "@google/generative-ai": "^0.24.1",
+        "capacitor-voice-recorder": "^7.0.6",
+        "cors": "^2.8.5",
+        "dotenv": "^17.2.3",
+        "express": "^5.2.1",
+        "groq-sdk": "^1.1.2",
+        "multer": "^2.4.0",
+        "mysql2": "^3.16.1",
+        "pg": "^8.16.3"
+    },
+    "devDependencies": {
+        "@capacitor/assets": "^3.0.5",
+        "@react-native-community/cli": "latest",
+        "electron": "^44.5.1",
+        "electron-builder": "^25.1.8",
+        "nodemon": "^3.1.10"
+    },
+    "build": {
+        "appId": "com.sanlytebip.ai",
+        "productName": "Sanly Tebip AI",
+        "win": {
+            "target": "nsis",
+            "icon": "assets/icon.ico"
+        },
+        "files": [
+            "main.js",
+            "server.js",
+            "db.js",
+            "*.js",
+            "node_modules/**/*"
+        ],
+        "extraResources": [
+            {
+                "from": ".env",
+                "to": ".env"
+            }
+        ],
+        "asar": false
+    }
+}

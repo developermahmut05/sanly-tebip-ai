@@ -1,0 +1,27 @@
+# Esasy Node we Build papkalary
+node_modules/
+**/node_modules/
+dist/
+build/
+out/
+
+# Mobil proýektler (SanlyTebipApp we Android/iOS)
+SanlyTebipApp/node_modules/
+SanlyTebipApp/.expo/
+android/app/build/
+android/.gradle/
+ios/Pods/
+*.apk
+*.aab
+
+# Ýüklenen faýllar we sazlamalar
+uploads/
+.env
+.env.local
+.idea/
+.gradle/
+*.log
+
+public/assets/plants/
+public/assets/surat/
+uploads/

@@ -1,0 +1,9 @@
+{
+  "appId": "com.sanlytebip.app",
+  "appName": "Sanly Tebip",
+  "webDir": "public",
+  "server": {
+    "url": "https://sanly-tebip-ai-2.onrender.com",
+    "cleartext": true
+  }
+}

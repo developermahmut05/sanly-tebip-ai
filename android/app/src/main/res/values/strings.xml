@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Sanly Tebip</string>
+    <string name="title_activity_main">Sanly Tebip</string>
+    <string name="package_name">com.sanlytebip.app</string>
+    <string name="custom_url_scheme">com.sanlytebip.app</string>
+</resources>
