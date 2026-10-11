@@ -577,8 +577,8 @@ const chat = model.startChat({
                 .replace(/Hormatly ulanyjy[\s\S]*?isleýärin\./gi, "")
                 .replace(/Bu ösümlik barada[\s\S]*?berilýär\./gi, "")
                 .replace(/Türkmençe ady:\s*[^%\n]+/gi, "")
-                .replace(/Latynça ady:\s*[^%\n]+/gi, "")
                 .replace(/Rusça ady:\s*[^%\n]+/gi, "")
+                .replace(/Latynça ady:\s*[^%\n]+/gi, "")
                 .replace(/Maşgalasy:|Family:|Degişlidir:|Verbenaceae|Lamiaceae|Asteraceae|Fabaceae/gi, "")
                 .replace(/^[\s.\-,:;]+/, "")
                 .trim();
@@ -590,8 +590,8 @@ const chat = model.startChat({
             const header = plantInDb 
                 ? `Bu ösümlik barada Gahryman Arkadagymyzyň «Türkmenistanyň dermanlyk ösümlikleri» atly ylmy ensiklopediýasynyň ${plantInDb.tom_belgisi}-nji tomunyň, ${plantInDb.sahypa_belgisi}-nji sahypasynda giňişleýin maglumat berilýär.\n\n` +
                   `Türkmençe ady: ${plantInDb.ady_tm}\n` +
-                  `Latynça ady: ${plantInDb.ady_lat}\n` +
-                  `Rusça ady: ${plantInDb.ady_ru || "Maglumat ýok"}\n\n`
+                  `Rusça ady: ${plantInDb.ady_ru }\n` +
+                  `Latynça ady: ${plantInDb.ady_lat || "Maglumat ýok"}\n\n`
                 : "";
         
             let welcomeMessage = "";

@@ -104,13 +104,14 @@ async function findPlantInLibrary(prompt) {
               );
 
               console.log(
+                `📚 Rusça: ${plant.ady_ru}`
+            );
+
+              console.log(
                   `📚 Latyn: ${plant.ady_lat}`
               );
 
-              console.log(
-                  `📚 Rusça: ${plant.ady_ru}`
-              );
-
+             
               console.log(
                   `📖 Tom: ${plant.tom_belgisi}, Sahypa: ${plant.sahypa_belgisi}`
               );
@@ -327,8 +328,8 @@ async function addNewPlantToLibrary(data) {
 
         const {
             ady_tm,
-            ady_lat,
             ady_ru,
+            ady_lat,
             bejeriş_häsiýeti,
             surat_fayl,
             tom_belgisi,
@@ -340,8 +341,8 @@ async function addNewPlantToLibrary(data) {
             INSERT INTO plants_library
             (
                 ady_tm,
-                ady_lat,
                 ady_ru,
+                ady_lat,
                 bejeriş_häsiýeti,
                 surat_fayl,
                 tom_belgisi,
@@ -355,8 +356,8 @@ async function addNewPlantToLibrary(data) {
             query,
             [
                 ady_tm,
-                ady_lat,
                 ady_ru,
+                ady_lat,
                 bejeriş_häsiýeti,
                 surat_fayl,
                 tom_belgisi,
